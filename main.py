@@ -2,23 +2,35 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi import Request
 from fastapi.responses import HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 from apps.api import api_app
 from apps.auth import auth_app
 
 app = FastAPI()
-app.mount('/auth', auth_app)
-app.mount('/api', api_app)
+app.mount("/auth", auth_app)
+app.mount("/api", api_app)
+
+ALLOWED_HOSTS = ["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_HOSTS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
-@app.get('/')
+@app.get("/")
 async def root():
     return HTMLResponse('<body><a href="/auth/login">Log In</a></body>')
 
 
-@app.get('/token')
+@app.get("/token")
 async def token(request: Request):
-    return HTMLResponse('''
+    return HTMLResponse(
+        """
                 <script>
                 function send(){
                     var req = new XMLHttpRequest();
@@ -39,23 +51,24 @@ async def token(request: Request):
                 </script>
                 <button onClick="send()">Get FastAPI JWT Token</button>
 
-                <button onClick='fetch("http://127.0.0.1:7000/api/").then(
+                <button onClick='fetch("http://127.0.0.1:8000/api/").then(
                     (r)=>r.json()).then((msg)=>{console.log(msg)});'>
                 Call Unprotected API
                 </button>
-                <button onClick='fetch("http://127.0.0.1:7000/api/protected").then(
+                <button onClick='fetch("http://127.0.0.1:8000/api/protected").then(
                     (r)=>r.json()).then((msg)=>{console.log(msg)});'>
                 Call Protected API without JWT
                 </button>
-                <button onClick='fetch("http://127.0.0.1:7000/api/protected",{
+                <button onClick='fetch("http://127.0.0.1:8000/api/protected",{
                     headers:{
                         "Authorization": "Bearer " + window.localStorage.getItem("jwt")
                     },
                 }).then((r)=>r.json()).then((msg)=>{console.log(msg)});'>
                 Call Protected API wit JWT
                 </button>
-            ''')
+            """
+    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     uvicorn.run(app, port=7000)
